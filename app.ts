@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import axios from 'axios';
 import dotenv from 'dotenv';
 import { p256 } from '@noble/curves/p256';
 import express, { Request, Response } from 'express';
@@ -9,9 +8,6 @@ dotenv.config();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;
-
-const FORDEFI_API_USER_TOKEN = process.env.FORDEFI_API_USER_TOKEN;
-const FORDEFI_API_BASE = 'https://api.fordefi.com/api/v1';
 
 const publicKeyPath = path.join(__dirname, 'public_key.pem');
 let FORDEFI_PUBLIC_KEY: string;
@@ -110,38 +106,6 @@ async function verifySignature(signature: string, body: Buffer): Promise<boolean
 }
 
 /**
- * Fetch transaction data from Fordefi API
- */
-async function fetchTransactionData(transactionId: string): Promise<TransactionData | null> {
-  if (!FORDEFI_API_USER_TOKEN) {
-    console.error('FORDEFI_API_USER_TOKEN not configured');
-    return null;
-  }
-
-  const fordefiUrl = `${FORDEFI_API_BASE}/transactions/${transactionId}`;
-  const headers = {
-    'Authorization': `Bearer ${FORDEFI_API_USER_TOKEN}`,
-    'Content-Type': 'application/json'
-  };
-
-  try {
-    console.log('Fetching transaction data for ID:', transactionId);
-    const response = await axios.get(fordefiUrl, { headers });
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error(`Error fetching transaction data: ${error.response?.status} - ${error.response?.statusText}`);
-      if (error.response?.data) {
-        console.error('Error details:', error.response.data);
-      }
-    } else {
-      console.error('Error fetching transaction data:', error);
-    }
-    return null;
-  }
-}
-
-/**
  * Webhook endpoint that listens for Fordefi events
  */
 app.post('/', async (req: Request, res: Response): Promise<void> => {
@@ -188,10 +152,6 @@ app.use((error: Error, req: Request, res: Response, next: any) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🪝 Fordefi webhook server running on http://0.0.0.0:${PORT}`);
   console.log(`📝 Webhook endpoint: http://0.0.0.0:${PORT}`);
-  
-  if (!FORDEFI_API_USER_TOKEN) {
-    console.warn('⚠️  Warning: FORDEFI_API_USER_TOKEN not configured');
-  }
 });
 
 export default app;
