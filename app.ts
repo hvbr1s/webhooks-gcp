@@ -19,7 +19,6 @@ try {
     process.exit(1);
   }
   
-
 app.use(express.raw({ type: 'application/json' }));
 
 interface WebhookEvent {
@@ -27,11 +26,6 @@ interface WebhookEvent {
     transaction_id?: string;
     [key: string]: any;
   };
-  [key: string]: any;
-}
-
-interface TransactionData {
-  id: string;
   [key: string]: any;
 }
 
@@ -106,6 +100,13 @@ async function verifySignature(signature: string, body: Buffer): Promise<boolean
 }
 
 /**
+ * Health check endpoint
+ */
+app.get('/health', (req: Request, res: Response) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+/**
  * Webhook endpoint that listens for Fordefi events
  */
 app.post('/', async (req: Request, res: Response): Promise<void> => {
@@ -137,6 +138,12 @@ app.post('/', async (req: Request, res: Response): Promise<void> => {
     console.log('\n📝 Received event:');
     const eventData: WebhookEvent = JSON.parse(rawBody.toString());
     console.log(JSON.stringify(eventData, null, 2));
+
+    // 4. Respond Ok
+    res.status(200).json({ 
+      status: 'success',
+      message: 'Webhook received and processed'
+    });
 
   } catch (error) {
     console.error('Error processing webhook:', error);
